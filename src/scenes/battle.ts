@@ -1,14 +1,16 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH as W, GAME_HEIGHT as H, FONT, REDUCED_MOTION } from '../config';
 import { LAYOUT } from '../layout';
-import { type Card, ELEMENTS, type ElementInfo } from '../core/types';
+import { type Card, type CardDefinition, ELEMENTS, type ElementInfo, type MonsterDef } from '../core/types';
 import { createCard } from '../core/deck';
+import { ultraT, ultraTAssets } from '../data/monsters/ultra-t';
 import { compareCards, hasWon } from '../core/rules';
 import { chooseCard } from '../ai/opponent';
 import { CardView } from '../ui/card-view';
 import { createMiniCard } from '../ui/mini-card';
 import { createDojoBackground } from '../ui/dojo-background';
 import { Fighter } from '../ui/fighter';
+import { playFinisher } from '../ui/animations/finishers';
 import { tween, wait } from '../ui/util';
 
 export class Battle extends Phaser.Scene {
@@ -18,6 +20,8 @@ export class Battle extends Phaser.Scene {
     private theirs: Card[] = [];
     private hand: (CardView | null)[] = [];
     private foeHand: Card[] = [];
+    private playerDeck: readonly CardDefinition[] = ultraT.deck;
+    private foeDeck: readonly CardDefinition[] = ultraT.deck;
     private foeBacks: (CardView | null)[] = [];
     private status!: Phaser.GameObjects.Text;
     private tintLayer!: Phaser.GameObjects.Rectangle;
@@ -29,17 +33,19 @@ export class Battle extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('monster-ultra-t', '/assets/monsters/ultra-t.png');
+        this.load.image('monster-ultra-t', ultraTAssets.sprite);
     }
 
-    create() {
+    create(data: { monster?: MonsterDef; opponentMonster?: MonsterDef } = {}) {
         this.busy = false;
         this.over = false;
         this.mine = [];
         this.theirs = [];
         this.hand = [];
         this.foeBacks = [];
-        this.foeHand = Array.from({ length: 5 }, createCard);
+        this.playerDeck = (data.monster ?? ultraT).deck;
+        this.foeDeck = (data.opponentMonster ?? ultraT).deck;
+        this.foeHand = Array.from({ length: 5 }, () => createCard(this.foeDeck));
 
         if (!this.textures.exists('dot')) {
             const g = this.make.graphics({ x: 0, y: 0 }, false);
@@ -70,7 +76,7 @@ export class Battle extends Phaser.Scene {
     private dealCard(i: number, delay = 0) {
         const x = LAYOUT.handStartX + i * LAYOUT.handGap;
         const y = LAYOUT.handY;
-        const view = new CardView(this, x, y, createCard(), true);
+        const view = new CardView(this, x, y, createCard(this.playerDeck), true);
         view.setInteractive({ useHandCursor: true });
         view.on('pointerover', () => {
             if (!this.busy && !this.over && view.input) this.tweens.add({ targets: view, y: y - 20, duration: 90 });
@@ -146,7 +152,13 @@ export class Battle extends Phaser.Scene {
             this.status.setText(playerWon ? 'Você venceu a rodada!' : 'O oponente venceu a rodada');
             this.burst(winner.x, winner.y, info);
             this.flash(info.tint);
-            (playerWon ? this.playerFighter : this.foeFighter).hop();
+            const attacker = playerWon ? this.playerFighter : this.foeFighter;
+            const target = playerWon ? this.foeFighter : this.playerFighter;
+            if (winner.card.kind === 'special' && winner.card.animation) {
+                await playFinisher(this, winner.card.animation, attacker, target);
+            } else {
+                attacker.hop();
+            }
             if (winner.card.element === 'fire' && !REDUCED_MOTION) this.cameras.main.shake(160, 0.004);
             void tween(this, { targets: loser, alpha: 0.35, duration: 250 });
             await tween(this, { targets: winner, scale: LAYOUT.arenaScale * 1.15, duration: 160, yoyo: true });
@@ -162,7 +174,7 @@ export class Battle extends Phaser.Scene {
         await Promise.all([mine, foe].map(c => tween(this, { targets: c, alpha: 0, y: '-=30', duration: 260 })));
         mine.destroy();
         foe.destroy();
-        this.foeHand[j] = createCard();
+        this.foeHand[j] = createCard(this.foeDeck);
         this.spawnFoeBack(j);
         this.dealCard(i);
 

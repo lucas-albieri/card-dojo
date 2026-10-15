@@ -1,11 +1,27 @@
 // Dados e tipos do jogo. Nada aqui depende do Phaser.
 export type ElementType = 'fire' | 'water' | 'plant';
+export type CardKind = 'basic' | 'special';
 
 export interface Card {
+    id?: string;
     element: ElementType;
     value: number; // 2 a 12
     color: number; // índice em COLORS
+    kind?: CardKind;
     artKey?: string;
+    animation?: string;
+}
+
+export interface CardDefinition extends Card {
+    id: string;
+    kind: CardKind;
+}
+
+export interface MonsterDef {
+    id: string;
+    name: string;
+    sprite: string;
+    deck: CardDefinition[];
 }
 
 export interface ElementInfo {
