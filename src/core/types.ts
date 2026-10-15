@@ -5,6 +5,7 @@ export interface Card {
     element: ElementType;
     value: number; // 2 a 12
     color: number; // índice em COLORS
+    artKey?: string;
 }
 
 export interface ElementInfo {

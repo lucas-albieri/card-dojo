@@ -28,6 +28,10 @@ export class Battle extends Phaser.Scene {
         super('battle');
     }
 
+    preload() {
+        this.load.image('monster-ultra-t', '/assets/monsters/ultra-t.png');
+    }
+
     create() {
         this.busy = false;
         this.over = false;
