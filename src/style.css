@@ -1,0 +1,29 @@
+:root {
+  --bg: #dff1fa;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b1d30;
+    color-scheme: dark;
+  }
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fredoka', system-ui, sans-serif;
+}
+
+#app {
+  width: min(100vw, calc(100vh * 16 / 9));
+  aspect-ratio: 16 / 9;
+}
