@@ -12,6 +12,7 @@ import { createDojoBackground } from '../ui/dojo-background';
 import { Fighter } from '../ui/fighter';
 import { playFinisher } from '../ui/animations/finishers';
 import { tween, wait } from '../ui/util';
+import { createMenuButton } from '../ui/menu-button';
 
 export class Battle extends Phaser.Scene {
     private busy = false;
@@ -71,6 +72,16 @@ export class Battle extends Phaser.Scene {
             this.dealCard(i, i * 70);
             this.spawnFoeBack(i, i * 70);
         }
+
+        createMenuButton(
+            this,
+            LAYOUT.battleExitX,
+            LAYOUT.battleExitY,
+            LAYOUT.battleExitWidth,
+            LAYOUT.battleExitHeight,
+            'SAIR DA BATALHA',
+            () => this.scene.start('title'),
+        ).setDepth(30);
     }
 
     private dealCard(i: number, delay = 0) {
@@ -154,11 +165,13 @@ export class Battle extends Phaser.Scene {
             this.flash(info.tint);
             const attacker = playerWon ? this.playerFighter : this.foeFighter;
             const target = playerWon ? this.foeFighter : this.playerFighter;
-            if (winner.card.kind === 'special' && winner.card.animation) {
-                await playFinisher(this, winner.card.animation, attacker, target);
-            } else {
-                attacker.hop();
-            }
+            await playFinisher(
+                this,
+                winner.card.kind === 'special' ? winner.card.animation : undefined,
+                winner.card.element,
+                attacker,
+                target,
+            );
             if (winner.card.element === 'fire' && !REDUCED_MOTION) this.cameras.main.shake(160, 0.004);
             void tween(this, { targets: loser, alpha: 0.35, duration: 250 });
             await tween(this, { targets: winner, scale: LAYOUT.arenaScale * 1.15, duration: 160, yoyo: true });
@@ -189,9 +202,9 @@ export class Battle extends Phaser.Scene {
         this.add.rectangle(W / 2, H / 2, W, H, 0x2a1608, 0.7).setDepth(100).setInteractive();
         const style = { fontFamily: FONT, fontStyle: '700', color: '#ffffff' };
         this.add.text(W / 2, H * 0.38, playerWon ? 'Você venceu!' : 'O oponente venceu', { ...style, fontSize: '110px' }).setOrigin(0.5).setDepth(101);
-        const button = this.add.text(W / 2, H * 0.58, 'Jogar de novo', { ...style, fontSize: '56px', backgroundColor: '#2f80ed', padding: { x: 50, y: 22 } })
-            .setOrigin(0.5).setDepth(101).setInteractive({ useHandCursor: true });
-        button.on('pointerdown', () => this.scene.restart());
+        this.add.text(W / 2, H * 0.58, 'Voltando ao início...', { ...style, fontSize: '56px' })
+            .setOrigin(0.5).setDepth(101);
         if (playerWon) this.burst(W / 2, H * 0.38, ELEMENTS.plant);
+        this.time.delayedCall(1800, () => this.scene.start('title'));
     }
 }

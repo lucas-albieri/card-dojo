@@ -67,7 +67,7 @@ O `fighter.ts` precisa ganhar `pose(name)` (troca de textura). Hoje tem `hop()` 
 - [x] Testes do núcleo e catálogo tipado com baralho inicial por monstro
 - [ ] Cenas: `boot`, `title`, `monster-select`, `pause`, `result`, `lobby` simples
 - [ ] Seleção de monstro integrada ao fluxo de batalha
-- [ ] `fighter.pose()` + primeiras poses (`windup`, `attack`, `hit`) + 1ª animação com projétil e cenário
+- [x] `fighter.pose()` + primeiras poses (`windup`, `attack`, `hit`) + 1ª animação com projétil e cenário
 - [ ] Cartas e animações do 1º monstro; depois mais monstros
 - [ ] Sons/música, IA melhor, multiplayer
 

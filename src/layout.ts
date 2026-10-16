@@ -17,6 +17,16 @@ export const LAYOUT = {
 
     // texto de status
     statusY: H * 0.14,
+    battleExitX: 200,
+    battleExitY: 76,
+    battleExitWidth: 360,
+    battleExitHeight: 72,
+    finisherProjectileStartOffsetX: 90,
+    finisherProjectileTargetOffsetX: 90,
+    finisherProjectileYOffset: 220,
+    finisherProjectileSize: 52,
+    finisherProjectileDuration: 520,
+    finisherImpactFlashDuration: 180,
 
     // cartas jogadas no meio
     arenaY: H * 0.46,

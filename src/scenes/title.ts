@@ -155,9 +155,9 @@ export class Title extends Phaser.Scene {
 
         addText(0, -190, 'MOVIMENTO REDUZIDO', '30px');
         addText(0, -142, 'Diminui animações e efeitos de câmera', '22px', '#c4b694');
-        const motionState = addText(0, -60, REDUCED_MOTION ? 'ATIVADO' : 'DESATIVADO', '28px', '#baff39');
         const motionToggle = this.add.rectangle(0, -60, 310, 68, 0x30483e).setStrokeStyle(3, 0xbaff39).setInteractive({ useHandCursor: true });
         overlay.add(motionToggle);
+        const motionState = addText(0, -60, REDUCED_MOTION ? 'ATIVADO' : 'DESATIVADO', '28px', '#baff39');
         motionToggle.on('pointerdown', () => {
             setReducedMotion(!REDUCED_MOTION);
             motionState.setText(REDUCED_MOTION ? 'ATIVADO' : 'DESATIVADO');

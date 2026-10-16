@@ -1,32 +1,52 @@
 import Phaser from 'phaser';
 import { REDUCED_MOTION } from '../../config';
+import { ELEMENTS, type ElementType } from '../../core/types';
+import { LAYOUT } from '../../layout';
 import { Fighter } from '../fighter';
+import { flyProjectile } from './projectile';
 
-export async function playFinisher(scene: Phaser.Scene, animation: string, attacker: Fighter, target: Fighter) {
+export async function playFinisher(
+    scene: Phaser.Scene,
+    animation: string | undefined,
+    element: ElementType,
+    attacker: Fighter,
+    target: Fighter,
+) {
     if (REDUCED_MOTION) return;
 
     await attacker.pose('windup');
     await attacker.pose('attack');
+    await flyProjectile(scene, attacker, target, element);
 
-    const effect = scene.add.graphics().setPosition(target.x, target.y - 220).setDepth(30);
-    if (animation === 'snow-freeze') drawSnowflake(effect);
-    else if (animation === 'vine-cage') drawVines(effect);
-    else drawSlash(effect);
+    const { tint } = ELEMENTS[element];
+    scene.cameras.main.flash(
+        LAYOUT.finisherImpactFlashDuration,
+        (tint >> 16) & 0xff,
+        (tint >> 8) & 0xff,
+        tint & 0xff,
+    );
 
-    await new Promise<void>(resolve => {
-        scene.tweens.add({
-            targets: effect,
-            alpha: 0,
-            scaleX: 1.25,
-            scaleY: 1.25,
-            duration: 420,
-            ease: 'Cubic.easeOut',
-            onComplete: () => {
-                effect.destroy();
-                resolve();
-            },
+    if (animation) {
+        const effect = scene.add.graphics().setPosition(target.x, target.y - 220).setDepth(30);
+        if (animation === 'snow-freeze') drawSnowflake(effect);
+        else if (animation === 'vine-cage') drawVines(effect);
+        else drawSlash(effect);
+
+        await new Promise<void>(resolve => {
+            scene.tweens.add({
+                targets: effect,
+                alpha: 0,
+                scaleX: 1.25,
+                scaleY: 1.25,
+                duration: 420,
+                ease: 'Cubic.easeOut',
+                onComplete: () => {
+                    effect.destroy();
+                    resolve();
+                },
+            });
         });
-    });
+    }
 
     await target.pose('hit');
     await attacker.pose('win');
