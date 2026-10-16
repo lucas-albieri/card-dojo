@@ -2,7 +2,10 @@ import Phaser from 'phaser';
 import './style.css';
 import { GAME_WIDTH, GAME_HEIGHT } from './config';
 import { Battle } from './scenes/battle';
+import { Boot } from './scenes/boot';
 import { MonsterSelect } from './scenes/monster-select';
+import { Pause } from './scenes/pause';
+import { Result } from './scenes/result';
 import { Title } from './scenes/title';
 
 const start = () =>
@@ -13,7 +16,7 @@ const start = () =>
     height: GAME_HEIGHT,
     backgroundColor: '#e9b98f',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-    scene: [Title, MonsterSelect, Battle],
+    scene: [Boot, Title, MonsterSelect, Battle, Pause, Result],
   });
 
 // espera a fonte carregar (ou 1,5 s) para o texto sair certo

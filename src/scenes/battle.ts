@@ -82,6 +82,26 @@ export class Battle extends Phaser.Scene {
             'SAIR DA BATALHA',
             () => this.scene.start('title'),
         ).setDepth(30);
+
+        const pauseBattle = () => {
+            if (this.busy || this.over) return;
+            this.scene.pause();
+            this.scene.launch('pause');
+        };
+        createMenuButton(
+            this,
+            LAYOUT.battlePauseX,
+            LAYOUT.battlePauseY,
+            LAYOUT.battlePauseWidth,
+            LAYOUT.battlePauseHeight,
+            'PAUSAR',
+            pauseBattle,
+        ).setDepth(30);
+
+        this.input.keyboard?.on('keydown-ESC', pauseBattle);
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.input.keyboard?.off('keydown-ESC', pauseBattle);
+        });
     }
 
     private dealCard(i: number, delay = 0) {
@@ -199,12 +219,7 @@ export class Battle extends Phaser.Scene {
 
     private finish(playerWon: boolean) {
         this.over = true;
-        this.add.rectangle(W / 2, H / 2, W, H, 0x2a1608, 0.7).setDepth(100).setInteractive();
-        const style = { fontFamily: FONT, fontStyle: '700', color: '#ffffff' };
-        this.add.text(W / 2, H * 0.38, playerWon ? 'Você venceu!' : 'O oponente venceu', { ...style, fontSize: '110px' }).setOrigin(0.5).setDepth(101);
-        this.add.text(W / 2, H * 0.58, 'Voltando ao início...', { ...style, fontSize: '56px' })
-            .setOrigin(0.5).setDepth(101);
         if (playerWon) this.burst(W / 2, H * 0.38, ELEMENTS.plant);
-        this.time.delayedCall(1800, () => this.scene.start('title'));
+        this.scene.start('result', { playerWon });
     }
 }

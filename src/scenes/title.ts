@@ -11,6 +11,7 @@ export class Title extends Phaser.Scene {
     }
 
     preload() {
+        this.load.image('dojo-background', '/dojo.png');
         this.load.image('monster-ultra-t-logo', ultraTAssets.logo);
         this.load.image('monster-ultra-t-splash', ultraTAssets.splash);
     }

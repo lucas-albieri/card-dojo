@@ -29,9 +29,9 @@ src/
 ├── core/   types.ts deck.ts rules.ts    # regras puras
 ├── ai/     opponent.ts
 ├── ui/     card-view mini-card dojo-background fighter util
-└── scenes/ battle.ts
+└── scenes/ boot title monster-select battle pause result
 ```
-**A criar:** `data/monsters/<id>.ts` (dados do monstro), `ui/animations/` (defaults por elemento + especiais por monstro), cenas `boot`, `title`, `monster-select`, `pause`, `result`, `lobby`.
+**A criar:** `data/monsters/<id>.ts` (dados do monstro), `ui/animations/` (defaults por elemento + especiais por monstro), cenas `boot`, `pause` e `result`. A tela `title` já funciona como lobby simples.
 
 ```ts
 export const monster: MonsterDef = {
@@ -60,13 +60,13 @@ export const throwBall = async ({ attacker, target, scene }) => {
 O `fighter.ts` precisa ganhar `pose(name)` (troca de textura). Hoje tem `hop()` e respiração.
 
 ## Telas
-`boot → title → [lobby] → monster-select → battle → result`, com `pause` como overlay (`scene.launch`). O monstro escolhido vai por `scene.start('battle', { monster })`. Lobby começa como cenário simples, sem rede.
+`boot → title/lobby → monster-select → battle → result`, com `pause` como overlay (`scene.launch`). O monstro escolhido vai por `scene.start('battle', { monster })`. O lobby é o próprio dojo da tela inicial, sem rede.
 
 ## Roadmap
 - [x] Protótipo, estrutura Bun+Vite+TS, 1920×1080, cenário de dojo, sprite provisório do 1º monstro
 - [x] Testes do núcleo e catálogo tipado com baralho inicial por monstro
-- [ ] Cenas: `boot`, `title`, `monster-select`, `pause`, `result`, `lobby` simples
-- [ ] Seleção de monstro integrada ao fluxo de batalha
+- [x] Cenas: `boot`, `title`, `monster-select`, `pause`, `result` e lobby simples integrado à tela inicial
+- [x] Seleção de monstro integrada ao fluxo de batalha
 - [x] `fighter.pose()` + primeiras poses (`windup`, `attack`, `hit`) + 1ª animação com projétil e cenário
 - [ ] Cartas e animações do 1º monstro; depois mais monstros
 - [ ] Sons/música, IA melhor, multiplayer
