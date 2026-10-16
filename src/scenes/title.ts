@@ -12,75 +12,72 @@ export class Title extends Phaser.Scene {
 
     preload() {
         this.load.image('dojo-background', '/dojo.png');
-        this.load.image('monster-ultra-t-logo', ultraTAssets.logo);
+        this.load.image('dojo-altar', '/altar.png');
+        this.load.image('dojo-table', '/mesa.png');
+        this.load.image('dojo-cards', '/cartas.png');
         this.load.image('monster-ultra-t-splash', ultraTAssets.splash);
     }
 
     create() {
         createDojoLobby(this);
 
-        this.add.image(LAYOUT.lobbyLogoX, LAYOUT.lobbyLogoY, 'monster-ultra-t-logo')
-            .setScale(LAYOUT.lobbyLogoScale);
         this.add.text(LAYOUT.lobbyTitleX, LAYOUT.lobbyTitleY, 'DOJO', {
             fontFamily: FONT,
             fontStyle: '700',
-            fontSize: '72px',
+            fontSize: '92px',
             color: '#f3e5c7',
-            stroke: '#38281c',
-            strokeThickness: 8,
-        }).setOrigin(0, 0.5);
-        this.add.text(LAYOUT.lobbyTitleX + 8, LAYOUT.lobbyTitleY + 52, 'PORTÕES ABERTOS', {
+            stroke: '#1a1520',
+            strokeThickness: 5,
+        }).setOrigin(0, 0);
+        this.add.circle(LAYOUT.lobbyTaglineX - 15, LAYOUT.lobbyTaglineY, 9, 0x8bce35).setDepth(2);
+        this.add.text(LAYOUT.lobbyTaglineX, LAYOUT.lobbyTaglineY, 'PORTÕES ABERTOS', {
             fontFamily: FONT,
             fontStyle: '700',
-            fontSize: '24px',
+            fontSize: '27px',
             color: '#baff39',
-        });
+        }).setOrigin(0, 0.5);
 
         const splash = this.add.image(LAYOUT.lobbySplashX, LAYOUT.lobbySplashY, 'monster-ultra-t-splash')
             .setDepth(2)
             .setName('lobby-splash');
-        const targetAspect = LAYOUT.lobbySplashWidth / LAYOUT.lobbySplashHeight;
-        const sourceAspect = splash.width / splash.height;
-        if (sourceAspect > targetAspect) {
-            const cropWidth = splash.height * targetAspect;
-            splash.setCrop((splash.width - cropWidth) / 2, 0, cropWidth, splash.height);
-        } else {
-            const cropHeight = splash.width / targetAspect;
-            splash.setCrop(0, (splash.height - cropHeight) / 2, splash.width, cropHeight);
-        }
-        splash.setDisplaySize(LAYOUT.lobbySplashWidth, LAYOUT.lobbySplashHeight);
-        this.add.text(LAYOUT.lobbyCharacterX, 748, 'ALTAR DO LUTADOR', {
+        const cropHeight = Math.round(LAYOUT.lobbySplashHeight / LAYOUT.lobbySplashWidth * splash.width);
+        splash.setCrop(0, (splash.height - cropHeight) / 2, splash.width, cropHeight);
+        splash.setDisplaySize(
+            LAYOUT.lobbySplashWidth,
+            LAYOUT.lobbySplashHeight * splash.height / cropHeight,
+        );
+        this.add.text(LAYOUT.lobbyCharacterX, LAYOUT.lobbyAltarTitleY, 'ALTAR DO LUTADOR', {
             fontFamily: FONT,
             fontStyle: '700',
-            fontSize: '25px',
-            color: '#e5d6b2',
-            stroke: '#172522',
+            fontSize: '24px',
+            color: '#f3e5c7',
+            stroke: '#1a101d',
+            strokeThickness: 4,
+        }).setOrigin(0.5).setDepth(4);
+        this.add.text(LAYOUT.lobbyCharacterX, LAYOUT.lobbyAltarNameY, ultraT.name.toUpperCase(), {
+            fontFamily: FONT,
+            fontStyle: '700',
+            fontSize: '36px',
+            color: '#baff39',
+            stroke: '#1a101d',
             strokeThickness: 5,
         }).setOrigin(0.5).setDepth(4);
-        this.add.text(LAYOUT.lobbyCharacterX, 784, ultraT.name.toUpperCase(), {
-            fontFamily: FONT,
-            fontStyle: '700',
-            fontSize: '34px',
-            color: '#baff39',
-            stroke: '#172522',
-            strokeThickness: 6,
-        }).setOrigin(0.5).setDepth(4);
 
-        this.add.text(LAYOUT.lobbyBattleX, 740, 'PORTÃO DA ARENA', {
+        this.add.text(LAYOUT.lobbyBattleX, LAYOUT.lobbyGateTitleY, 'PORTÃO DA ARENA', {
             fontFamily: FONT,
             fontStyle: '700',
-            fontSize: '28px',
-            color: '#f2cb7a',
-            stroke: '#38251b',
-            strokeThickness: 6,
-        }).setOrigin(0.5).setDepth(4);
-        this.add.text(LAYOUT.lobbyDeckX, 886, 'MESA DO BARALHO', {
-            fontFamily: FONT,
-            fontStyle: '700',
-            fontSize: '25px',
+            fontSize: '27px',
             color: '#f3e5c7',
-            stroke: '#38281c',
-            strokeThickness: 6,
+            stroke: '#321918',
+            strokeThickness: 5,
+        }).setOrigin(0.5).setDepth(4);
+        this.add.text(LAYOUT.lobbyDeckX, LAYOUT.lobbyDeckTitleY, 'MESA DO BARALHO', {
+            fontFamily: FONT,
+            fontStyle: '700',
+            fontSize: '26px',
+            color: '#f3e5c7',
+            stroke: '#211416',
+            strokeThickness: 5,
         }).setOrigin(0.5).setDepth(4);
 
         this.createSelectedBadge();
@@ -115,25 +112,48 @@ export class Title extends Phaser.Scene {
     private createSelectedBadge() {
         const x = LAYOUT.lobbySelectedX;
         const y = LAYOUT.lobbySelectedY;
-        this.add.rectangle(x, y, 430, 86, 0x1c2925, 0.92).setStrokeStyle(3, 0xb89557, 0.9);
-        this.add.text(x - 190, y - 20, 'PERSONAGEM ATIVO', {
+        const badge = this.add.graphics().setDepth(5);
+        const left = x - LAYOUT.lobbySelectedWidth / 2;
+        const right = x + LAYOUT.lobbySelectedWidth / 2;
+        const top = y - LAYOUT.lobbySelectedHeight / 2;
+        const bottom = y + LAYOUT.lobbySelectedHeight / 2;
+        badge.fillStyle(0x10101b, 0.96).fillRoundedRect(left, top, LAYOUT.lobbySelectedWidth, LAYOUT.lobbySelectedHeight, 18);
+        badge.lineStyle(4, 0x7d3fb2, 0.98).strokeRoundedRect(left, top, LAYOUT.lobbySelectedWidth, LAYOUT.lobbySelectedHeight, 18);
+        badge.lineStyle(4, 0xd0a35a, 0.9)
+            .lineBetween(left + 10, top + 10, left + 50, top + 10)
+            .lineBetween(left + 10, top + 10, left + 10, bottom - 10)
+            .lineBetween(right - 50, bottom - 10, right - 10, bottom - 10)
+            .lineBetween(right - 10, top + 10, right - 10, bottom - 30);
+        const icon = this.add.graphics().setDepth(6);
+        const iconX = LAYOUT.lobbySelectedIconX;
+        const iconY = LAYOUT.lobbySelectedIconY;
+        icon.lineStyle(3, 0xc4bdc9, 0.95).strokeRoundedRect(iconX - 25, iconY - 25, 50, 50, 12);
+        icon.fillStyle(0xc4bdc9, 0.95).fillCircle(iconX, iconY - 9, 8);
+        icon.fillRoundedRect(iconX - 14, iconY + 3, 28, 14, 7);
+        this.add.text(LAYOUT.lobbySelectedTextX, LAYOUT.lobbySelectedLabelY, 'PRÓXIMO A DESBLOQUEAR', {
             fontFamily: FONT,
             fontStyle: '700',
-            fontSize: '18px',
-            color: '#c4b694',
-        });
-        this.add.text(x - 190, y + 13, ultraT.name.toUpperCase(), {
+            fontSize: '17px',
+            color: '#b9b3c0',
+        }).setDepth(6);
+        this.add.text(LAYOUT.lobbySelectedTextX, LAYOUT.lobbySelectedNameY, '???', {
             fontFamily: FONT,
             fontStyle: '700',
-            fontSize: '26px',
-            color: '#f3e5c7',
-        });
+            fontSize: '30px',
+            color: '#baff39',
+        }).setDepth(6);
     }
 
     private createSettingsHotspot() {
         const button = this.add.container(LAYOUT.lobbySettingsX, LAYOUT.lobbySettingsY).setDepth(30);
-        const disc = this.add.circle(0, 0, 42, 0x1c2925, 0.96).setStrokeStyle(3, 0xd1b36e);
-        const icon = this.add.text(0, -2, '⚙', { fontSize: '44px', color: '#f3e5c7' }).setOrigin(0.5);
+        const disc = this.add.circle(0, 0, 42, 0x10101b, 0.98).setStrokeStyle(4, 0xd1b36e);
+        const icon = this.add.graphics();
+        icon.lineStyle(5, 0xf3e5c7, 1);
+        for (let spoke = 0; spoke < 8; spoke += 1) {
+            const angle = spoke * Math.PI / 4;
+            icon.lineBetween(Math.cos(angle) * 12, Math.sin(angle) * 12, Math.cos(angle) * 21, Math.sin(angle) * 21);
+        }
+        icon.lineStyle(5, 0xf3e5c7, 1).strokeCircle(0, 0, 11);
         button.add([disc, icon]);
         disc.setInteractive({ useHandCursor: true });
         disc.on('pointerover', () => disc.setFillStyle(0x395247));
@@ -147,31 +167,45 @@ export class Title extends Phaser.Scene {
     }
 
     private openSettings() {
-        const overlay = this.createOverlay('CONFIGURAÇÕES', 700, 560);
+        const overlay = this.createOverlay('CONFIGURAÇÕES', 720, 580);
         const addText = (x: number, y: number, text: string, fontSize: string, color = '#f3e5c7') => {
-            const item = this.add.text(x, y, text, { fontFamily: FONT, fontStyle: '700', fontSize, color }).setOrigin(0.5);
+            const item = this.add.text(x, y, text, {
+                fontFamily: FONT,
+                fontStyle: '700',
+                fontSize,
+                color,
+                align: 'center',
+            }).setOrigin(0.5).setDepth(1002);
             overlay.add(item);
             return item;
         };
 
-        addText(0, -190, 'MOVIMENTO REDUZIDO', '30px');
-        addText(0, -142, 'Diminui animações e efeitos de câmera', '22px', '#c4b694');
-        const motionToggle = this.add.rectangle(0, -60, 310, 68, 0x30483e).setStrokeStyle(3, 0xbaff39).setInteractive({ useHandCursor: true });
+        addText(0, -200, 'MOVIMENTO REDUZIDO', '30px');
+        addText(0, -150, 'Diminui animações e efeitos de câmera', '22px', '#c4b694');
+        const motionToggle = this.add.rectangle(0, -65, 380, 76, 0x30483e)
+            .setStrokeStyle(3, 0xbaff39)
+            .setInteractive({ useHandCursor: true })
+            .setDepth(1001);
         overlay.add(motionToggle);
-        const motionState = addText(0, -60, REDUCED_MOTION ? 'ATIVADO' : 'DESATIVADO', '28px', '#baff39');
+        const motionState = addText(0, -65, REDUCED_MOTION ? 'ATIVADO' : 'DESATIVADO', '28px', '#baff39')
+            .setInteractive({ useHandCursor: true });
         motionToggle.on('pointerdown', () => {
             setReducedMotion(!REDUCED_MOTION);
             motionState.setText(REDUCED_MOTION ? 'ATIVADO' : 'DESATIVADO');
         });
+        motionState.on('pointerdown', () => motionToggle.emit('pointerdown'));
 
-        const fullscreen = this.add.rectangle(0, 55, 390, 70, 0x32443c).setStrokeStyle(3, 0xb89557).setInteractive({ useHandCursor: true });
+        const fullscreen = this.add.rectangle(0, 65, 440, 76, 0x32443c)
+            .setStrokeStyle(3, 0xb89557)
+            .setInteractive({ useHandCursor: true })
+            .setDepth(1001);
         overlay.add(fullscreen);
-        const fullscreenLabel = addText(0, 55, 'ALTERNAR TELA CHEIA', '25px');
+        const fullscreenLabel = addText(0, 65, 'ALTERNAR TELA CHEIA', '25px').setInteractive({ useHandCursor: true });
         fullscreen.on('pointerdown', () => {
             if (this.scale.isFullscreen) this.scale.stopFullscreen();
             else this.scale.startFullscreen();
         });
-        fullscreenLabel.setInteractive({ useHandCursor: true }).on('pointerdown', () => fullscreen.emit('pointerdown'));
+        fullscreenLabel.on('pointerdown', () => fullscreen.emit('pointerdown'));
     }
 
     private openDeck() {
