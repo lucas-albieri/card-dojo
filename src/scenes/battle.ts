@@ -35,6 +35,7 @@ export class Battle extends Phaser.Scene {
 
     preload() {
         this.load.image('monster-ultra-t', ultraTAssets.sprite);
+        this.load.image('card-blue-1', ultraTAssets.blueCard1);
     }
 
     create(data: { monster?: MonsterDef; opponentMonster?: MonsterDef } = {}) {
@@ -69,7 +70,7 @@ export class Battle extends Phaser.Scene {
         this.add.text(W - 40, LAYOUT.handY, 'Oponente', { ...label, fontSize: '44px' }).setOrigin(1, 0.5);
 
         for (let i = 0; i < 5; i++) {
-            this.dealCard(i, i * 70);
+            this.dealCard(i, i * 70, i === 0 ? this.playerDeck.find(card => card.artKey) : undefined);
             this.spawnFoeBack(i, i * 70);
         }
 
@@ -109,10 +110,10 @@ export class Battle extends Phaser.Scene {
         });
     }
 
-    private dealCard(i: number, delay = 0) {
+    private dealCard(i: number, delay = 0, card?: Card) {
         const x = LAYOUT.handStartX + i * LAYOUT.handGap;
         const y = LAYOUT.handY;
-        const view = new CardView(this, x, y, createCard(this.playerDeck), true);
+        const view = new CardView(this, x, y, card ?? createCard(this.playerDeck), true);
         view.setInteractive({ useHandCursor: true });
         view.on('pointerover', () => {
             if (!this.busy && !this.over && view.input) this.tweens.add({ targets: view, y: y - 20, duration: 90 });

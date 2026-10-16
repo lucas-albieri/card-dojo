@@ -3,7 +3,7 @@ import { FONT } from '../config';
 import { type Card, COLORS, ELEMENTS } from '../core/types';
 import { tween } from './util';
 
-// Carta visual desenhada em 110x150. O tamanho final vem do setScale (ver layout.ts).
+// O tamanho final vem do setScale (ver layout.ts).
 export class CardView extends Phaser.GameObjects.Container {
     readonly card: Card;
     private front: Phaser.GameObjects.Container;
@@ -13,41 +13,57 @@ export class CardView extends Phaser.GameObjects.Container {
         super(scene, x, y);
         this.card = card;
         const info = ELEMENTS[card.element];
+        const artKey = card.artKey && scene.textures.exists(card.artKey) ? card.artKey : undefined;
+        const hasArt = artKey !== undefined;
 
-        const cardHeight = 140;
+        const cardWidth = 140;
+        const cardHeight = 180;
         const border = scene.add.graphics();
-        border.fillStyle(0xf06d4d).fillRoundedRect(-55, -cardHeight / 2, 110, cardHeight, 18);
-        border.fillStyle(0x0b2a4a, 0.18).fillRoundedRect(-50, -cardHeight / 2 + 5, 100, cardHeight - 10, 14);
-        border.lineStyle(6, 0x000000, 1).strokeRoundedRect(-55, -cardHeight / 2, 110, cardHeight, 18);
+        if (!hasArt) {
+            border.fillStyle(0xf06d4d).fillRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 18);
+            border.fillStyle(0x0b2a4a, 0.18).fillRoundedRect(-cardWidth / 2 + 5, -cardHeight / 2 + 5, cardWidth - 10, cardHeight - 10, 14);
+            border.lineStyle(6, 0x000000, 1).strokeRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 18);
+        }
 
-        const badgeBg = scene.add.graphics();
-        badgeBg.fillStyle(0xffffff, 0.96).fillRoundedRect(-52, -cardHeight / 2 + 12, 72, 34, 12);
-        badgeBg.fillStyle(COLORS[card.color], 0.98).fillRoundedRect(-48, -cardHeight / 2 + 16, 28, 26, 8);
-        const typeIcon = scene.add.text(-34, -cardHeight / 2 + 29, info.icon, { fontSize: '22px' }).setOrigin(0.5);
-        const typeGlow = scene.add.ellipse(-18, -cardHeight / 2 + 29, 26, 18, 0xffffff, 0.18);
+        const badgeBg = hasArt ? undefined : scene.add.graphics();
+        if (badgeBg) {
+            badgeBg.fillStyle(0xffffff, 0.96).fillRoundedRect(-52, -cardHeight / 2 + 12, 72, 34, 12);
+            badgeBg.fillStyle(COLORS[card.color], 0.98).fillRoundedRect(-48, -cardHeight / 2 + 16, 28, 26, 8);
+        }
+        const typeIcon = scene.add.text(hasArt ? -44 : -34, hasArt ? -cardHeight / 2 + 30 : -cardHeight / 2 + 29, info.icon, { fontSize: '22px' }).setOrigin(0.5);
+        const typeGlow = hasArt ? undefined : scene.add.ellipse(-18, -cardHeight / 2 + 29, 26, 18, 0xffffff, 0.18);
+        const art = artKey ? scene.add.image(0, 0, artKey).setDisplaySize(cardWidth, cardHeight) : undefined;
 
-        const value = scene.add.text(0, 4, String(card.value), {
+        const value = scene.add.text(hasArt ? -44 : 0, hasArt ? -cardHeight / 2 + 56 : 4, String(card.value), {
             fontFamily: FONT,
-            fontSize: '46px',
+            fontSize: hasArt ? '24px' : '46px',
             fontStyle: '700',
-            color: '#0c1d2d',
-            stroke: '#ffffff',
-            strokeThickness: 9,
+            color: hasArt ? '#ffffff' : '#0c1d2d',
+            stroke: hasArt ? '#16467a' : '#ffffff',
+            strokeThickness: hasArt ? 3 : 9,
         }).setOrigin(0.5);
 
-        const valueShadow = scene.add.text(2, 6, String(card.value), {
+        const valueShadow = hasArt ? undefined : scene.add.text(2, 6, String(card.value), {
             fontFamily: FONT,
             fontSize: '46px',
             fontStyle: '700',
             color: '#000000',
         }).setOrigin(0.5).setAlpha(0.14);
 
-        this.front = scene.add.container(0, 0, [border, badgeBg, typeGlow, typeIcon, valueShadow, value]);
+        const frontChildren: Phaser.GameObjects.GameObject[] = [];
+        if (art) frontChildren.push(art);
+        frontChildren.push(border);
+        if (badgeBg) frontChildren.push(badgeBg);
+        if (typeGlow) frontChildren.push(typeGlow);
+        frontChildren.push(typeIcon);
+        if (valueShadow) frontChildren.push(valueShadow);
+        frontChildren.push(value);
+        this.front = scene.add.container(0, 0, frontChildren);
 
         const b = scene.add.graphics();
-        b.fillStyle(0xf06d4d).fillRoundedRect(-55, -cardHeight / 2, 110, cardHeight, 18);
-        b.fillStyle(0x16467a).fillRoundedRect(-50, -cardHeight / 2 + 5, 100, cardHeight - 10, 14);
-        b.lineStyle(6, 0xffffff).strokeRoundedRect(-55, -cardHeight / 2, 110, cardHeight, 18);
+        b.fillStyle(0xf06d4d).fillRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 18);
+        b.fillStyle(0x16467a).fillRoundedRect(-cardWidth / 2 + 5, -cardHeight / 2 + 5, cardWidth - 10, cardHeight - 10, 14);
+        b.lineStyle(6, 0xffffff).strokeRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 18);
         b.lineStyle(3, 0x8fd3f2).strokeCircle(0, 0, 30);
         const q = scene.add.text(0, 0, '?', { fontFamily: FONT, fontSize: '40px', fontStyle: '700', color: '#8fd3f2' }).setOrigin(0.5);
         this.back = scene.add.container(0, 0, [b, q]);
@@ -55,7 +71,7 @@ export class CardView extends Phaser.GameObjects.Container {
         this.front.setVisible(faceUp);
         this.back.setVisible(!faceUp);
         this.add([this.front, this.back]);
-        this.setSize(110, cardHeight);
+        this.setSize(cardWidth, cardHeight);
         scene.add.existing(this);
     }
 
