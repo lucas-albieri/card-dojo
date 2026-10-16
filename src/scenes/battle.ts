@@ -81,7 +81,10 @@ export class Battle extends Phaser.Scene {
             LAYOUT.battleExitHeight,
             'SAIR DA BATALHA',
             () => this.scene.start('title'),
-        ).setDepth(30);
+            false,
+            true,
+        )
+            .setDepth(30);
 
         const pauseBattle = () => {
             if (this.busy || this.over) return;
@@ -96,6 +99,8 @@ export class Battle extends Phaser.Scene {
             LAYOUT.battlePauseHeight,
             'PAUSAR',
             pauseBattle,
+            false,
+            true,
         ).setDepth(30);
 
         this.input.keyboard?.on('keydown-ESC', pauseBattle);

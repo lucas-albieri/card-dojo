@@ -6,7 +6,7 @@ import { ELEMENTS } from '../core/types';
 import { createDojoLobby } from '../ui/dojo-lobby';
 
 export class Title extends Phaser.Scene {
-    constructor() {
+    constructor () {
         super('title');
     }
 
@@ -23,28 +23,26 @@ export class Title extends Phaser.Scene {
 
         this.add.text(LAYOUT.lobbyTitleX, LAYOUT.lobbyTitleY, 'DOJO', {
             fontFamily: FONT,
-            fontStyle: '700',
-            fontSize: '92px',
+            fontStyle: '900',
+            fontSize: '64px',
             color: '#f3e5c7',
             stroke: '#1a1520',
             strokeThickness: 5,
         }).setOrigin(0, 0);
-        this.add.circle(LAYOUT.lobbyTaglineX - 15, LAYOUT.lobbyTaglineY, 9, 0x8bce35).setDepth(2);
+        this.add.circle(LAYOUT.lobbyTaglineX - 15, LAYOUT.lobbyTaglineY, 6, 0x8bce35).setDepth(2);
         this.add.text(LAYOUT.lobbyTaglineX, LAYOUT.lobbyTaglineY, 'PORTÕES ABERTOS', {
             fontFamily: FONT,
-            fontStyle: '700',
+            fontStyle: '100',
             fontSize: '27px',
             color: '#baff39',
         }).setOrigin(0, 0.5);
 
         const splash = this.add.image(LAYOUT.lobbySplashX, LAYOUT.lobbySplashY, 'monster-ultra-t-splash')
-            .setDepth(2)
+            .setDepth(0)
             .setName('lobby-splash');
-        const cropHeight = Math.round(LAYOUT.lobbySplashHeight / LAYOUT.lobbySplashWidth * splash.width);
-        splash.setCrop(0, (splash.height - cropHeight) / 2, splash.width, cropHeight);
         splash.setDisplaySize(
             LAYOUT.lobbySplashWidth,
-            LAYOUT.lobbySplashHeight * splash.height / cropHeight,
+            LAYOUT.lobbySplashHeight
         );
         this.add.text(LAYOUT.lobbyCharacterX, LAYOUT.lobbyAltarTitleY, 'ALTAR DO LUTADOR', {
             fontFamily: FONT,
@@ -136,17 +134,17 @@ export class Title extends Phaser.Scene {
             fontSize: '17px',
             color: '#b9b3c0',
         }).setDepth(6);
-        this.add.text(LAYOUT.lobbySelectedTextX, LAYOUT.lobbySelectedNameY, '???', {
+        this.add.text(LAYOUT.lobbySelectedTextX, LAYOUT.lobbySelectedNameY, 'Quatro Braços', {
             fontFamily: FONT,
             fontStyle: '700',
             fontSize: '30px',
-            color: '#baff39',
+            color: '#ff5039',
         }).setDepth(6);
     }
 
     private createSettingsHotspot() {
         const button = this.add.container(LAYOUT.lobbySettingsX, LAYOUT.lobbySettingsY).setDepth(30);
-        const disc = this.add.circle(0, 0, 42, 0x10101b, 0.98).setStrokeStyle(4, 0xd1b36e);
+        const disc = this.add.circle(0, 0, 36, 0x10101b, 0.98).setStrokeStyle(3, 0xd1b36e);
         const icon = this.add.graphics();
         icon.lineStyle(5, 0xf3e5c7, 1);
         for (let spoke = 0; spoke < 8; spoke += 1) {
