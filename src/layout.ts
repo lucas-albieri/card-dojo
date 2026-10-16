@@ -6,11 +6,11 @@ export const LAYOUT = {
     // cenário
     floorTop: H * 0.43,   // onde a parede termina e o ringue começa
     ropes: [H * 0.46, H * 0.54],
-    frontEdge: H * 0.69,  // borda ondulada na frente do ringue
-    barTop: H * 0.76,     // topo da barra de baixo (cartas)
+    frontEdge: H * 0.65,  // borda ondulada na frente do ringue
+    barTop: H * 0.70,     // topo da barra de baixo (cartas)
 
     // personagens (origem = centro dos pés)
-    fighterY: H * 0.65,
+    fighterY: H * 0.61,
     fighterLeftX: W * 0.24,
     fighterRightX: W * 0.76,
     fighterScale: 1.25,
@@ -46,7 +46,7 @@ export const LAYOUT = {
     arenaScale: 2.1,
 
     // mão do jogador (esquerda da barra)
-    handY: Math.round(H * 0.89),
+    handY: Math.round(H * 0.86),
     handStartX: 290,
     handGap: 180,
     handScale: 1.25,
