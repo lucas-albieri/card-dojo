@@ -46,14 +46,15 @@ export const LAYOUT = {
     arenaScale: 2.1,
 
     // mão do jogador (esquerda da barra)
-    handY: Math.round(H * 0.86),
-    handStartX: 290,
-    handGap: 180,
-    handScale: 1.25,
+    handY: Math.round(H * 0.84),
+    handStartX: 192,
+    handGap: 190,
+    handScale: 1.2,
+    handLabelY: H - 42,
 
     // cartas viradas do oponente (direita da barra)
-    foeBackStartX: W - 330,
-    foeBackGap: 100,
+    foeBackStartX: W - 200,
+    foeBackGap: 120,
     foeBackScale: 0.8,
 
     // cartas ganhas (canto superior)

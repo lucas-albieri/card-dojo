@@ -16,8 +16,8 @@ export class CardView extends Phaser.GameObjects.Container {
         const artKey = card.artKey && scene.textures.exists(card.artKey) ? card.artKey : undefined;
         const hasArt = artKey !== undefined;
 
-        const cardWidth = 140;
-        const cardHeight = 180;
+        const cardWidth = 160;
+        const cardHeight = 190;
         const border = scene.add.graphics();
         if (!hasArt) {
             border.fillStyle(0xf06d4d).fillRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 18);
@@ -32,7 +32,8 @@ export class CardView extends Phaser.GameObjects.Container {
         }
         const typeIcon = scene.add.text(hasArt ? -44 : -34, hasArt ? -cardHeight / 2 + 30 : -cardHeight / 2 + 29, info.icon, { fontSize: '22px' }).setOrigin(0.5);
         const typeGlow = hasArt ? undefined : scene.add.ellipse(-18, -cardHeight / 2 + 29, 26, 18, 0xffffff, 0.18);
-        const art = artKey ? scene.add.image(0, 0, artKey).setDisplaySize(cardWidth, cardHeight) : undefined;
+        const artHeight = artKey === 'card-green-1' ? cardHeight * 0.87 : cardHeight;
+        const art = artKey ? scene.add.image(0, 0, artKey).setDisplaySize(cardWidth, artHeight) : undefined;
 
         const value = scene.add.text(hasArt ? -44 : 0, hasArt ? -cardHeight / 2 + 56 : 4, String(card.value), {
             fontFamily: FONT,

@@ -36,6 +36,7 @@ export class Battle extends Phaser.Scene {
     preload() {
         this.load.image('monster-ultra-t', ultraTAssets.sprite);
         this.load.image('card-blue-1', ultraTAssets.blueCard1);
+        this.load.image('card-green-1', ultraTAssets.greenCard1);
     }
 
     create(data: { monster?: MonsterDef; opponentMonster?: MonsterDef } = {}) {
@@ -66,11 +67,16 @@ export class Battle extends Phaser.Scene {
 
         const label = { fontFamily: FONT, fontStyle: '700', color: '#ffffff', stroke: '#4a2e1a', strokeThickness: 8 };
         this.status = this.add.text(W / 2, LAYOUT.statusY, 'Escolha uma carta', { ...label, fontSize: '56px' }).setOrigin(0.5);
-        this.add.text(40, LAYOUT.handY, 'Você', { ...label, fontSize: '52px' }).setOrigin(0, 0.5);
-        this.add.text(W - 40, LAYOUT.handY, 'Oponente', { ...label, fontSize: '44px' }).setOrigin(1, 0.5);
+        this.add.text(LAYOUT.handStartX + LAYOUT.handGap * 2, LAYOUT.handLabelY, 'Você', { ...label, fontSize: '44px' }).setOrigin(0.5);
+        this.add.text(W * 0.75, LAYOUT.handLabelY, 'Oponente', { ...label, fontSize: '44px' }).setOrigin(0.5);
 
         for (let i = 0; i < 5; i++) {
-            this.dealCard(i, i * 70, i === 0 ? this.playerDeck.find(card => card.artKey) : undefined);
+            const firstHandCard = i === 0
+                ? this.playerDeck.find(card => card.artKey === 'card-blue-1')
+                : i === 1
+                    ? this.playerDeck.find(card => card.artKey === 'card-green-1')
+                    : undefined;
+            this.dealCard(i, i * 70, firstHandCard);
             this.spawnFoeBack(i, i * 70);
         }
 
