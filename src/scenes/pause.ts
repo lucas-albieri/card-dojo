@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { FONT, GAME_HEIGHT as H, GAME_WIDTH as W } from '../config';
 import { LAYOUT } from '../layout';
 import { createMenuButton } from '../ui/menu-button';
+import { addPhosphorIcon } from '../ui/phosphor-icons';
 
 export class Pause extends Phaser.Scene {
     constructor() {
@@ -18,6 +19,7 @@ export class Pause extends Phaser.Scene {
             fontSize: '64px',
             color: '#f3e5c7',
         }).setOrigin(0.5);
+        addPhosphorIcon(this, 'pause', W / 2 - 310, LAYOUT.pauseTitleY, 38, 0xf3e5c7, 2);
 
         createMenuButton(
             this,
@@ -28,6 +30,8 @@ export class Pause extends Phaser.Scene {
             'CONTINUAR',
             () => this.resumeBattle(),
             true,
+            false,
+            'play',
         );
         createMenuButton(
             this,
@@ -37,6 +41,9 @@ export class Pause extends Phaser.Scene {
             78,
             'SAIR PARA O INÍCIO',
             () => this.returnToTitle(),
+            false,
+            false,
+            'house',
         );
 
         this.input.keyboard?.once('keydown-ESC', () => this.resumeBattle());

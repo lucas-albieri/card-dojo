@@ -48,7 +48,7 @@ export const LAYOUT = {
     // mão do jogador (esquerda da barra)
     handY: Math.round(H * 0.84),
     handStartX: 192,
-    handGap: 190,
+    handGap: 220,
     handScale: 1.2,
     handLabelY: H - 42,
 
@@ -96,10 +96,20 @@ export const LAYOUT = {
     selectActionY: H * 0.84,
     selectActionWidth: 440,
     selectActionHeight: 90,
+    modeHeadingY: H * 0.19,
+    modeTowerY: H * 0.35,
+    modeFreeY: H * 0.49,
+    modeStoryY: H * 0.62,
+    modeMultiplayerY: H * 0.73,
+    modeBackY: H * 0.88,
 
     // lobby do dojo
     lobbyBackgroundX: W / 2,
     lobbyBackgroundY: H / 2,
+    lobbyPortalX: 306,
+    lobbyPortalY: H * 0.46,
+    lobbyPortalWidth: 720,
+    lobbyPortalHeight: 495,
     lobbyTableX: W / 2,
     lobbyTableY: H * 0.76,
     lobbyTableWidth: 980,
@@ -144,6 +154,8 @@ export const LAYOUT = {
     lobbySelectedY: H - 82,
     lobbySelectedWidth: 480,
     lobbySelectedHeight: 108,
+    lobbySelectedFrameWidth: 500,
+    lobbySelectedFrameHeight: 176,
     lobbySelectedIconX: 70,
     lobbySelectedIconY: H - 82,
     lobbySelectedTextX: 112,

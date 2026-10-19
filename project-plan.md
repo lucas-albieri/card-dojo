@@ -15,7 +15,7 @@ Phaser 4 + TypeScript + Vite, gerenciado com **Bun**. Jogo em **1920×1080** (`S
 ## O jogo
 - Jogador escolhe um **monstro** (quantos eu conseguir fazer); cada um tem **baralho, arte e animações próprias**.
 - Elementos: **fogo > planta > água > fogo**. Mesmo elemento: maior valor vence; valor igual: empate.
-- Carta básica ou especial = `{ id, kind, element, value (2–12), color (0–3), animation? }`. Cada monstro tem seu baralho; a primeira versão sorteia continuamente e repõe 1 carta após cada rodada.
+- Carta básica ou especial = `{ id, kind, element, value, color (0–3), animation? }`. `value` deve corresponder ao número impresso na arte da carta. Cada monstro tem seu baralho; a primeira versão sorteia continuamente e repõe 1 carta após cada rodada.
 - Carta especial mantém as regras atuais e ativa sua finalização visual quando vence a rodada.
 - Vitória: 3 cartas ganhas do mesmo elemento com cores diferentes, ou uma de cada elemento com cores diferentes.
 - Oponente hoje aleatório (`ai/opponent.ts`).
@@ -27,6 +27,7 @@ Phaser 4 + TypeScript + Vite, gerenciado com **Bun**. Jogo em **1920×1080** (`S
 src/
 ├── main.ts · config.ts · layout.ts      # entrada, constantes, posições
 ├── core/   types.ts deck.ts rules.ts    # regras puras
+├── storage/ local-save.ts               # preferências e progresso local versionado
 ├── ai/     opponent.ts
 ├── ui/     card-view mini-card dojo-background fighter util
 └── scenes/ boot title monster-select battle pause result
@@ -45,8 +46,8 @@ export const monster: MonsterDef = {
 - Estilo 2D suave: contorno uniforme, cores chapadas, 1 tom de sombra. Desenhar em 2× e exportar reduzindo. PNG transparente.
 - **Lutador:** 512×512, virado para a direita, pés centralizados embaixo (~16 px de margem), ~450 px de altura. **Todas as poses no mesmo quadro e com os pés no mesmo lugar.**
 - Poses: `idle`, `windup`, `attack`, `hit`, `win`. Idle pode ser 1 frame (o código faz a respiração) ou um loop curto.
-- **Carta:** ilustração 300×270 sem moldura (o código desenha moldura, cor e valor); começar com 1 por elemento. Verso 330×450 (opcional). Ícones 128×128 (opcional).
-- Pasta: `public/assets/monsters/<id>/` com `fighter-idle.png`, `fighter-windup.png`, `fighter-attack.png`, `fighter-hit.png`, `fighter-win.png`, `card-fire.png`, `card-water.png`, `card-plant.png`.
+- **Carta:** arte final quadrada (o modelo atual do Ultra T é 1254×1254) já inclui moldura, elemento e valor; o código exibe a imagem inteira sem sobrepor esses dados. Cada definição no baralho referencia a arte pelo elemento e valor. Verso quadrado opcional.
+- Pasta: `public/assets/monsters/<id>/` com `fighter-idle.png`, `fighter-windup.png`, `fighter-attack.png`, `fighter-hit.png`, `fighter-win.png` e `deck/` com as cartas completas.
 
 ## Animação das cartas
 Cada animação é uma **receita em passos**: troca de pose do atacante (com esticar/achatar por tween), projétil (sprite por elemento), reação do alvo, efeito de cenário (já existem `flash`, `burst` e `shake`; faltam chuva, escurecer, troca de fundo).
@@ -67,6 +68,7 @@ O `fighter.ts` precisa ganhar `pose(name)` (troca de textura). Hoje tem `hop()` 
 - [x] Testes do núcleo e catálogo tipado com baralho inicial por monstro
 - [x] Cenas: `boot`, `title`, `monster-select`, `pause`, `result` e lobby simples integrado à tela inicial
 - [x] Seleção de monstro integrada ao fluxo de batalha
+- [x] Preferências e estrutura de progresso salvas localmente
 - [x] `fighter.pose()` + primeiras poses (`windup`, `attack`, `hit`) + 1ª animação com projétil e cenário
 - [ ] Cartas e animações do 1º monstro; depois mais monstros
 - [ ] Sons/música, IA melhor, multiplayer
@@ -80,3 +82,6 @@ O `fighter.ts` precisa ganhar `pose(name)` (troca de textura). Hoje tem `hop()` 
 
 ## Em aberto
 Nome do jogo · verde da `COLORS` × verde do elemento planta · tecnologia do servidor. Coleção e desbloqueios são ideias para depois do primeiro loop local.
+
+## Salvamento local
+`storage/local-save.ts` guarda em `localStorage` as preferências (volumes, música, áudio e movimento reduzido) e a estrutura de progresso (heróis desbloqueados/selecionado, capítulo, castelo, torres liberadas/concluídas e melhor andar por torre/herói). A chave é `card-dojo-save-v1`; saves antigos na chave `card-dojo-save` são lidos para migração. Esses dados ficam neste navegador e dispositivo; sincronização entre dispositivos exigirá uma conta e um serviço remoto. Corridas em andamento não são salvas.

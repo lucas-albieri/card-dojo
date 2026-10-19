@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH as W, GAME_HEIGHT as H, FONT, REDUCED_MOTION } from '../config';
 import { LAYOUT } from '../layout';
-import { type Card, type CardDefinition, ELEMENTS, type ElementInfo, type MonsterDef } from '../core/types';
+import { type AiLevel, type Card, type CardDefinition, ELEMENTS, type ElementInfo, type MonsterDef, type OpponentDef } from '../core/types';
 import { createCard } from '../core/deck';
-import { ultraT, ultraTAssets } from '../data/monsters/ultra-t';
+import { ultraT, ultraTAssets, ultraTCardAssets } from '../data/monsters/ultra-t';
+import { getMonster } from '../data/monsters';
 import { compareCards, hasWon } from '../core/rules';
 import { chooseCard } from '../ai/opponent';
 import { CardView } from '../ui/card-view';
@@ -13,6 +14,8 @@ import { Fighter } from '../ui/fighter';
 import { playFinisher } from '../ui/animations/finishers';
 import { tween, wait } from '../ui/util';
 import { createMenuButton } from '../ui/menu-button';
+import { elementSfx, playSfx } from '../ui/audio';
+import { addPhosphorIcon } from '../ui/phosphor-icons';
 
 export class Battle extends Phaser.Scene {
     private busy = false;
@@ -23,6 +26,8 @@ export class Battle extends Phaser.Scene {
     private foeHand: Card[] = [];
     private playerDeck: readonly CardDefinition[] = ultraT.deck;
     private foeDeck: readonly CardDefinition[] = ultraT.deck;
+    private aiLevel: AiLevel = 1;
+    private onFinish?: (result: { won: boolean }) => void;
     private foeBacks: (CardView | null)[] = [];
     private status!: Phaser.GameObjects.Text;
     private tintLayer!: Phaser.GameObjects.Rectangle;
@@ -35,19 +40,30 @@ export class Battle extends Phaser.Scene {
 
     preload() {
         this.load.image('monster-ultra-t', ultraTAssets.sprite);
-        this.load.image('card-blue-1', ultraTAssets.blueCard1);
-        this.load.image('card-green-1', ultraTAssets.greenCard1);
+        for (const cardAsset of ultraTCardAssets) {
+            this.load.image(cardAsset.key, cardAsset.path);
+        }
     }
 
-    create(data: { monster?: MonsterDef; opponentMonster?: MonsterDef } = {}) {
+    create(data: {
+        playerDeck?: readonly CardDefinition[];
+        opponent?: OpponentDef;
+        onFinish?: (result: { won: boolean }) => void;
+        monster?: MonsterDef;
+        opponentMonster?: MonsterDef;
+    } = {}) {
         this.busy = false;
         this.over = false;
         this.mine = [];
         this.theirs = [];
         this.hand = [];
         this.foeBacks = [];
-        this.playerDeck = (data.monster ?? ultraT).deck;
-        this.foeDeck = (data.opponentMonster ?? ultraT).deck;
+        this.playerDeck = data.playerDeck ?? (data.monster ?? ultraT).deck;
+        this.foeDeck = data.opponent
+            ? getMonster(data.opponent.monsterId).deck
+            : (data.opponentMonster ?? ultraT).deck;
+        this.aiLevel = data.opponent?.aiLevel ?? 1;
+        this.onFinish = data.onFinish;
         this.foeHand = Array.from({ length: 5 }, () => createCard(this.foeDeck));
 
         if (!this.textures.exists('dot')) {
@@ -67,15 +83,15 @@ export class Battle extends Phaser.Scene {
 
         const label = { fontFamily: FONT, fontStyle: '700', color: '#ffffff', stroke: '#4a2e1a', strokeThickness: 8 };
         this.status = this.add.text(W / 2, LAYOUT.statusY, 'Escolha uma carta', { ...label, fontSize: '56px' }).setOrigin(0.5);
-        this.add.text(LAYOUT.handStartX + LAYOUT.handGap * 2, LAYOUT.handLabelY, 'Você', { ...label, fontSize: '44px' }).setOrigin(0.5);
-        this.add.text(W * 0.75, LAYOUT.handLabelY, 'Oponente', { ...label, fontSize: '44px' }).setOrigin(0.5);
+        const playerLabelX = LAYOUT.handStartX + LAYOUT.handGap * 2;
+        const opponentLabelX = W * 0.75;
+        addPhosphorIcon(this, 'person-simple', playerLabelX - 70, LAYOUT.handLabelY, 34, 0xffffff, 5);
+        addPhosphorIcon(this, 'shield', opponentLabelX - 105, LAYOUT.handLabelY, 34, 0xffffff, 5);
+        this.add.text(playerLabelX, LAYOUT.handLabelY, 'Você', { ...label, fontSize: '44px' }).setOrigin(0.5);
+        this.add.text(opponentLabelX, LAYOUT.handLabelY, 'Oponente', { ...label, fontSize: '44px' }).setOrigin(0.5);
 
         for (let i = 0; i < 5; i++) {
-            const firstHandCard = i === 0
-                ? this.playerDeck.find(card => card.artKey === 'card-blue-1')
-                : i === 1
-                    ? this.playerDeck.find(card => card.artKey === 'card-green-1')
-                    : undefined;
+            const firstHandCard = i < 2 ? this.playerDeck[i] : undefined;
             this.dealCard(i, i * 70, firstHandCard);
             this.spawnFoeBack(i, i * 70);
         }
@@ -90,6 +106,7 @@ export class Battle extends Phaser.Scene {
             () => this.scene.start('title'),
             false,
             true,
+            'door-open',
         )
             .setDepth(30);
 
@@ -108,6 +125,7 @@ export class Battle extends Phaser.Scene {
             pauseBattle,
             false,
             true,
+            'pause',
         ).setDepth(30);
 
         this.input.keyboard?.on('keydown-ESC', pauseBattle);
@@ -122,10 +140,13 @@ export class Battle extends Phaser.Scene {
         const view = new CardView(this, x, y, card ?? createCard(this.playerDeck), true);
         view.setInteractive({ useHandCursor: true });
         view.on('pointerover', () => {
-            if (!this.busy && !this.over && view.input) this.tweens.add({ targets: view, y: y - 20, duration: 90 });
+            if (!REDUCED_MOTION && !this.busy && !this.over && view.input) this.tweens.add({ targets: view, y: y - 20, duration: 90 });
         });
         view.on('pointerout', () => {
-            if (view.input) this.tweens.add({ targets: view, y, duration: 90 });
+            if (view.input) {
+                if (REDUCED_MOTION) view.y = y;
+                else this.tweens.add({ targets: view, y, duration: 90 });
+            }
         });
         view.on('pointerdown', () => this.play(i));
         this.hand[i] = view;
@@ -157,6 +178,7 @@ export class Battle extends Phaser.Scene {
     private async play(i: number) {
         if (this.busy || this.over) return;
         this.busy = true;
+        playSfx(this, 'card-play');
 
         const mine = this.hand[i]!;
         this.hand[i] = null;
@@ -165,7 +187,8 @@ export class Battle extends Phaser.Scene {
         mine.setDepth(10);
 
         // o oponente joga a carta de uma das cartas viradas dele
-        const j = chooseCard(this.foeHand);
+        const playerHand = this.hand.flatMap(view => view ? [view.card] : []);
+        const j = chooseCard(this.foeHand, this.aiLevel, this.theirs, playerHand, this.mine);
         const foeCard = this.foeHand[j];
         const back = this.foeBacks[j]!;
         this.foeBacks[j] = null;
@@ -179,11 +202,13 @@ export class Battle extends Phaser.Scene {
             tween(this, { targets: foe, x: LAYOUT.arenaFoeX, y: LAYOUT.arenaY, scale: LAYOUT.arenaScale, duration: 420, delay: 120, ease: 'Back.easeOut' }),
         ]);
         await wait(this, 200);
+        playSfx(this, 'card-flip');
         await foe.flip(true);
         await wait(this, 250);
 
         const result = compareCards(mine.card, foeCard);
         if (result === 0) {
+            playSfx(this, 'round-draw');
             this.status.setText('Empate!');
             await Promise.all([mine, foe].map(c => tween(this, { targets: c, angle: 6, duration: 80, yoyo: true, repeat: 2 })));
         } else {
@@ -192,6 +217,9 @@ export class Battle extends Phaser.Scene {
             const loser = playerWon ? foe : mine;
             const info = ELEMENTS[winner.card.element];
 
+            playSfx(this, playerWon ? 'round-win' : 'round-lose');
+            const effectSfx = elementSfx(winner.card.element);
+            if (effectSfx) playSfx(this, effectSfx);
             this.status.setText(playerWon ? 'Você venceu a rodada!' : 'O oponente venceu a rodada');
             this.burst(winner.x, winner.y, info);
             this.flash(info.tint);
@@ -231,7 +259,12 @@ export class Battle extends Phaser.Scene {
 
     private finish(playerWon: boolean) {
         this.over = true;
+        playSfx(this, playerWon ? 'match-win' : 'match-lose');
         if (playerWon) this.burst(W / 2, H * 0.38, ELEMENTS.plant);
+        if (this.onFinish) {
+            this.onFinish({ won: playerWon });
+            return;
+        }
         this.scene.start('result', { playerWon });
     }
 }

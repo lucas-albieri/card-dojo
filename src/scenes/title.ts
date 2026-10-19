@@ -4,22 +4,37 @@ import { LAYOUT } from '../layout';
 import { ultraT, ultraTAssets } from '../data/monsters/ultra-t';
 import { ELEMENTS } from '../core/types';
 import { createDojoLobby } from '../ui/dojo-lobby';
+import {
+    getMusicVolume,
+    getMusicEnabled,
+    getSfxVolume,
+    playSfx,
+    setMusicEnabled,
+    setMusicVolume,
+    setSfxVolume,
+    toggleMute,
+} from '../ui/audio';
+import { addPhosphorIcon } from '../ui/phosphor-icons';
 
 export class Title extends Phaser.Scene {
+    private hoverTweens = new WeakMap<Phaser.GameObjects.Image, Phaser.Tweens.Tween>();
+
     constructor () {
         super('title');
     }
 
     preload() {
         this.load.image('dojo-background', '/dojo.png');
+        this.load.image('dojo-portal', '/portal.png');
         this.load.image('dojo-altar', '/altar.png');
         this.load.image('dojo-table', '/mesa.png');
         this.load.image('dojo-cards', '/cartas.png');
+        this.load.image('next-fighter-frame', '/moldura-prox-lutador.png');
         this.load.image('monster-ultra-t-splash', ultraTAssets.splash);
     }
 
     create() {
-        createDojoLobby(this);
+        const lobbyArt = createDojoLobby(this);
 
         this.add.text(LAYOUT.lobbyTitleX, LAYOUT.lobbyTitleY, 'DOJO', {
             fontFamily: FONT,
@@ -52,6 +67,7 @@ export class Title extends Phaser.Scene {
             stroke: '#1a101d',
             strokeThickness: 4,
         }).setOrigin(0.5).setDepth(4);
+        addPhosphorIcon(this, 'person-simple', LAYOUT.lobbyCharacterX - 170, LAYOUT.lobbyAltarTitleY, 24, 0xf3e5c7, 5);
         this.add.text(LAYOUT.lobbyCharacterX, LAYOUT.lobbyAltarNameY, ultraT.name.toUpperCase(), {
             fontFamily: FONT,
             fontStyle: '700',
@@ -60,6 +76,7 @@ export class Title extends Phaser.Scene {
             stroke: '#1a101d',
             strokeThickness: 5,
         }).setOrigin(0.5).setDepth(4);
+        addPhosphorIcon(this, 'cards-three', LAYOUT.lobbyDeckX - 155, LAYOUT.lobbyDeckTitleY, 27, 0xf3e5c7, 5);
 
         this.add.text(LAYOUT.lobbyBattleX, LAYOUT.lobbyGateTitleY, 'PORTÃO DA ARENA', {
             fontFamily: FONT,
@@ -69,6 +86,7 @@ export class Title extends Phaser.Scene {
             stroke: '#321918',
             strokeThickness: 5,
         }).setOrigin(0.5).setDepth(4);
+        addPhosphorIcon(this, 'boxing-glove', LAYOUT.lobbyBattleX - 132, LAYOUT.lobbyGateTitleY, 28, 0xf3e5c7, 5);
         this.add.text(LAYOUT.lobbyDeckX, LAYOUT.lobbyDeckTitleY, 'MESA DO BARALHO', {
             fontFamily: FONT,
             fontStyle: '700',
@@ -85,14 +103,16 @@ export class Title extends Phaser.Scene {
             LAYOUT.lobbyBattleY,
             LAYOUT.lobbyBattleWidth,
             LAYOUT.lobbyBattleHeight,
-            () => this.scene.start('battle', { monster: ultraT }),
+            () => this.scene.start('mode-select'),
+            [lobbyArt.portal],
         );
         this.createHotspot(
             LAYOUT.lobbyCharacterX,
             LAYOUT.lobbyCharacterY,
             LAYOUT.lobbyCharacterWidth,
             LAYOUT.lobbyCharacterHeight,
-            () => this.scene.start('monster-select'),
+            () => this.scene.start('mode-select'),
+            [splash, lobbyArt.altarFrame],
         );
         this.createHotspot(
             LAYOUT.lobbyDeckX,
@@ -100,6 +120,7 @@ export class Title extends Phaser.Scene {
             LAYOUT.lobbyDeckWidth,
             LAYOUT.lobbyDeckHeight,
             () => this.openDeck(),
+            [lobbyArt.cards],
         );
 
         if (!REDUCED_MOTION) {
@@ -110,24 +131,12 @@ export class Title extends Phaser.Scene {
     private createSelectedBadge() {
         const x = LAYOUT.lobbySelectedX;
         const y = LAYOUT.lobbySelectedY;
-        const badge = this.add.graphics().setDepth(5);
-        const left = x - LAYOUT.lobbySelectedWidth / 2;
-        const right = x + LAYOUT.lobbySelectedWidth / 2;
-        const top = y - LAYOUT.lobbySelectedHeight / 2;
-        const bottom = y + LAYOUT.lobbySelectedHeight / 2;
-        badge.fillStyle(0x10101b, 0.96).fillRoundedRect(left, top, LAYOUT.lobbySelectedWidth, LAYOUT.lobbySelectedHeight, 18);
-        badge.lineStyle(4, 0x7d3fb2, 0.98).strokeRoundedRect(left, top, LAYOUT.lobbySelectedWidth, LAYOUT.lobbySelectedHeight, 18);
-        badge.lineStyle(4, 0xd0a35a, 0.9)
-            .lineBetween(left + 10, top + 10, left + 50, top + 10)
-            .lineBetween(left + 10, top + 10, left + 10, bottom - 10)
-            .lineBetween(right - 50, bottom - 10, right - 10, bottom - 10)
-            .lineBetween(right - 10, top + 10, right - 10, bottom - 30);
-        const icon = this.add.graphics().setDepth(6);
+        this.add.image(x, y, 'next-fighter-frame')
+            .setDisplaySize(LAYOUT.lobbySelectedFrameWidth, LAYOUT.lobbySelectedFrameHeight)
+            .setDepth(5);
         const iconX = LAYOUT.lobbySelectedIconX;
         const iconY = LAYOUT.lobbySelectedIconY;
-        icon.lineStyle(3, 0xc4bdc9, 0.95).strokeRoundedRect(iconX - 25, iconY - 25, 50, 50, 12);
-        icon.fillStyle(0xc4bdc9, 0.95).fillCircle(iconX, iconY - 9, 8);
-        icon.fillRoundedRect(iconX - 14, iconY + 3, 28, 14, 7);
+        addPhosphorIcon(this, 'lock-key', iconX, iconY, 44, 0xc4bdc9, 7);
         this.add.text(LAYOUT.lobbySelectedTextX, LAYOUT.lobbySelectedLabelY, 'PRÓXIMO A DESBLOQUEAR', {
             fontFamily: FONT,
             fontStyle: '700',
@@ -145,27 +154,72 @@ export class Title extends Phaser.Scene {
     private createSettingsHotspot() {
         const button = this.add.container(LAYOUT.lobbySettingsX, LAYOUT.lobbySettingsY).setDepth(30);
         const disc = this.add.circle(0, 0, 36, 0x10101b, 0.98).setStrokeStyle(3, 0xd1b36e);
-        const icon = this.add.graphics();
-        icon.lineStyle(5, 0xf3e5c7, 1);
-        for (let spoke = 0; spoke < 8; spoke += 1) {
-            const angle = spoke * Math.PI / 4;
-            icon.lineBetween(Math.cos(angle) * 12, Math.sin(angle) * 12, Math.cos(angle) * 21, Math.sin(angle) * 21);
-        }
-        icon.lineStyle(5, 0xf3e5c7, 1).strokeCircle(0, 0, 11);
+        const icon = addPhosphorIcon(this, 'gear', 0, 0, 38, 0xf3e5c7, 31);
         button.add([disc, icon]);
         disc.setInteractive({ useHandCursor: true });
-        disc.on('pointerover', () => disc.setFillStyle(0x395247));
-        disc.on('pointerout', () => disc.setFillStyle(0x1c2925, 0.96));
-        disc.on('pointerdown', () => this.openSettings());
+        disc.on('pointerover', () => {
+            disc.setFillStyle(0x395247);
+            this.tweens.killTweensOf(button);
+            if (!REDUCED_MOTION) this.tweens.add({ targets: button, scale: 1.1, duration: 140, ease: 'Sine.easeOut' });
+        });
+        disc.on('pointerout', () => {
+            disc.setFillStyle(0x1c2925, 0.96);
+            this.tweens.killTweensOf(button);
+            if (REDUCED_MOTION) button.setScale(1);
+            else this.tweens.add({ targets: button, scale: 1, duration: 140, ease: 'Sine.easeOut' });
+        });
+        disc.on('pointerdown', () => {
+            playSfx(this, 'ui-click');
+            this.openSettings();
+        });
     }
 
-    private createHotspot(x: number, y: number, width: number, height: number, onPress: () => void) {
+    private createHotspot(
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        onPress: () => void,
+        hoverTargets: Phaser.GameObjects.Image[] = [],
+    ) {
         const zone = this.add.zone(x, y, width, height).setDepth(11).setInteractive({ useHandCursor: true });
-        zone.on('pointerdown', onPress);
+        const originalScales = hoverTargets.map(target => ({ x: target.scaleX, y: target.scaleY }));
+        zone.on('pointerover', () => this.animateHoverTargets(hoverTargets, originalScales, true));
+        zone.on('pointerout', () => this.animateHoverTargets(hoverTargets, originalScales, false));
+        zone.on('pointerdown', () => {
+            playSfx(this, 'ui-click');
+            onPress();
+        });
+    }
+
+    private animateHoverTargets(
+        targets: Phaser.GameObjects.Image[],
+        originalScales: { x: number; y: number }[],
+        hovered: boolean,
+    ) {
+        targets.forEach((target, index) => {
+            this.hoverTweens.get(target)?.stop();
+            this.hoverTweens.delete(target);
+            if (hovered) target.setTint(0xfff2d1);
+            else target.clearTint();
+            if (REDUCED_MOTION) {
+                if (!hovered) target.setScale(originalScales[index].x, originalScales[index].y);
+                return;
+            }
+            const scale = hovered ? 1.05 : 1;
+            const tween = this.tweens.add({
+                targets: target,
+                scaleX: originalScales[index].x * scale,
+                scaleY: originalScales[index].y * scale,
+                duration: 160,
+                ease: 'Sine.easeOut',
+            });
+            this.hoverTweens.set(target, tween);
+        });
     }
 
     private openSettings() {
-        const overlay = this.createOverlay('CONFIGURAÇÕES', 720, 580);
+        const overlay = this.createOverlay('CONFIGURAÇÕES', 720, 780);
         const addText = (x: number, y: number, text: string, fontSize: string, color = '#f3e5c7') => {
             const item = this.add.text(x, y, text, {
                 fontFamily: FONT,
@@ -178,32 +232,178 @@ export class Title extends Phaser.Scene {
             return item;
         };
 
-        addText(0, -200, 'MOVIMENTO REDUZIDO', '30px');
-        addText(0, -150, 'Diminui animações e efeitos de câmera', '22px', '#c4b694');
-        const motionToggle = this.add.rectangle(0, -65, 380, 76, 0x30483e)
+        overlay.add(addPhosphorIcon(this, 'person-simple', -196, -235, 30, 0xf3e5c7, 1002));
+        addText(0, -235, 'MOVIMENTO REDUZIDO', '30px');
+        addText(0, -195, 'Diminui animações e efeitos de câmera', '22px', '#c4b694');
+        const motionToggle = this.add.rectangle(0, -145, 380, 64, 0x30483e)
             .setStrokeStyle(3, 0xbaff39)
             .setInteractive({ useHandCursor: true })
             .setDepth(1001);
         overlay.add(motionToggle);
-        const motionState = addText(0, -65, REDUCED_MOTION ? 'ATIVADO' : 'DESATIVADO', '28px', '#baff39')
+        const motionState = addText(0, -145, REDUCED_MOTION ? 'ATIVADO' : 'DESATIVADO', '28px', '#baff39')
             .setInteractive({ useHandCursor: true });
+        const setMotionToggleHover = (hovered: boolean) => {
+            motionToggle.setFillStyle(hovered ? 0x425f4b : 0x30483e);
+            this.tweens.killTweensOf(motionToggle);
+            if (REDUCED_MOTION) {
+                if (!hovered) motionToggle.setScale(1);
+            } else {
+                this.tweens.add({
+                    targets: motionToggle,
+                    scaleX: hovered ? 1.025 : 1,
+                    scaleY: hovered ? 1.06 : 1,
+                    duration: 130,
+                    ease: 'Sine.easeOut',
+                });
+            }
+        };
+        motionToggle.on('pointerover', () => setMotionToggleHover(true));
+        motionToggle.on('pointerout', () => setMotionToggleHover(false));
+        motionState.on('pointerover', () => setMotionToggleHover(true));
+        motionState.on('pointerout', () => setMotionToggleHover(false));
         motionToggle.on('pointerdown', () => {
+            playSfx(this, 'ui-click');
             setReducedMotion(!REDUCED_MOTION);
             motionState.setText(REDUCED_MOTION ? 'ATIVADO' : 'DESATIVADO');
         });
         motionState.on('pointerdown', () => motionToggle.emit('pointerdown'));
 
-        const fullscreen = this.add.rectangle(0, 65, 440, 76, 0x32443c)
+        const sliderWidth = 360;
+        let activeSlider: ((pointer: Phaser.Input.Pointer) => void) | null = null;
+        const addVolumeSlider = (
+            label: string,
+            y: number,
+            initial: number,
+            setter: (value: number) => void,
+        ) => {
+            const icon = label === 'EFEITOS SONOROS' ? 'speaker-high' : 'music-notes';
+            overlay.add(addPhosphorIcon(this, icon, -270, y - 28, 26, 0xf3e5c7, 1002));
+            addText(-100, y - 28, label, '24px');
+            const track = this.add.rectangle(0, y, sliderWidth + 40, 38, 0x000000, 0)
+                .setInteractive({ useHandCursor: true })
+                .setDepth(1001);
+            const fill = this.add.graphics().setDepth(1002);
+            fill.fillStyle(0x526057).fillRoundedRect(-sliderWidth / 2, y - 6, sliderWidth, 12, 6);
+            const thumb = this.add.circle(-sliderWidth / 2 + sliderWidth * initial, y, 13, 0xf3e5c7)
+                .setStrokeStyle(3, 0xbaff39)
+                .setDepth(1003);
+            const valueLabel = addText(230, y, `${Math.round(initial * 100)}%`, '21px', '#baff39');
+            overlay.add([track, fill, thumb, valueLabel]);
+            const setPercent = (percent: number) => {
+                const clampedPercent = Math.max(0, Math.min(100, Math.round(percent)));
+                setter(clampedPercent / 100);
+                fill.clear();
+                fill.fillStyle(0x526057).fillRoundedRect(-sliderWidth / 2, y - 6, sliderWidth, 12, 6);
+                fill.fillStyle(0xbaff39).fillRoundedRect(-sliderWidth / 2, y - 6, sliderWidth * clampedPercent / 100, 12, 6);
+                thumb.setPosition(-sliderWidth / 2 + sliderWidth * clampedPercent / 100, y);
+                valueLabel.setText(`${clampedPercent}%`);
+            };
+            const setFromPointer = (pointer: Phaser.Input.Pointer) => {
+                setPercent((pointer.x - (W / 2 - sliderWidth / 2)) / sliderWidth * 100);
+            };
+            setPercent(initial * 100);
+            track.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+                playSfx(this, 'ui-click');
+                activeSlider = setFromPointer;
+                setFromPointer(pointer);
+            });
+        };
+
+        addVolumeSlider('EFEITOS SONOROS', -65, getSfxVolume(), setSfxVolume);
+        addVolumeSlider('MÚSICA', 45, getMusicVolume(), setMusicVolume);
+        const handleSliderMove = (pointer: Phaser.Input.Pointer) => {
+            if (pointer.isDown) activeSlider?.(pointer);
+        };
+        const stopSlider = () => {
+            activeSlider = null;
+        };
+        this.input.on('pointermove', handleSliderMove);
+        this.input.on('pointerup', stopSlider);
+        overlay.once('destroy', () => {
+            this.input.off('pointermove', handleSliderMove);
+            this.input.off('pointerup', stopSlider);
+        });
+
+        const musicToggle = this.add.rectangle(0, 115, 380, 58, 0x30483e)
+            .setStrokeStyle(3, 0xbaff39)
+            .setInteractive({ useHandCursor: true })
+            .setDepth(1001);
+        overlay.add(musicToggle);
+        overlay.add(addPhosphorIcon(this, 'music-notes', -115, 115, 25, 0xbaff39, 1002));
+        const musicState = addText(
+            15,
+            115,
+            getMusicEnabled() ? 'MÚSICA ATIVADA' : 'MÚSICA DESATIVADA',
+            '23px',
+            '#baff39',
+        ).setInteractive({ useHandCursor: true });
+        const toggleMusic = () => {
+            const enabled = !getMusicEnabled();
+            setMusicEnabled(enabled);
+            musicState.setText(enabled ? 'MÚSICA ATIVADA' : 'MÚSICA DESATIVADA');
+            playSfx(this, 'ui-click');
+        };
+        musicToggle.on('pointerdown', toggleMusic);
+        musicState.on('pointerdown', toggleMusic);
+
+        const fullscreen = this.add.rectangle(0, 190, 440, 64, 0x32443c)
             .setStrokeStyle(3, 0xb89557)
             .setInteractive({ useHandCursor: true })
             .setDepth(1001);
         overlay.add(fullscreen);
-        const fullscreenLabel = addText(0, 65, 'ALTERNAR TELA CHEIA', '25px').setInteractive({ useHandCursor: true });
+        overlay.add(addPhosphorIcon(this, 'arrows-out', -135, 190, 26, 0xf3e5c7, 1002));
+        const fullscreenLabel = addText(25, 190, 'ALTERNAR TELA CHEIA', '25px').setInteractive({ useHandCursor: true });
+        const setFullscreenHover = (hovered: boolean) => {
+            fullscreen.setFillStyle(hovered ? 0x496257 : 0x32443c);
+            this.tweens.killTweensOf(fullscreen);
+            if (REDUCED_MOTION) {
+                if (!hovered) fullscreen.setScale(1);
+            } else {
+                this.tweens.add({
+                    targets: fullscreen,
+                    scaleX: hovered ? 1.025 : 1,
+                    scaleY: hovered ? 1.06 : 1,
+                    duration: 130,
+                    ease: 'Sine.easeOut',
+                });
+            }
+        };
+        fullscreen.on('pointerover', () => setFullscreenHover(true));
+        fullscreen.on('pointerout', () => setFullscreenHover(false));
+        fullscreenLabel.on('pointerover', () => setFullscreenHover(true));
+        fullscreenLabel.on('pointerout', () => setFullscreenHover(false));
         fullscreen.on('pointerdown', () => {
+            playSfx(this, 'ui-click');
             if (this.scale.isFullscreen) this.scale.stopFullscreen();
             else this.scale.startFullscreen();
         });
         fullscreenLabel.on('pointerdown', () => fullscreen.emit('pointerdown'));
+
+        const soundToggle = this.add.rectangle(0, 270, 380, 64, 0x30483e)
+            .setStrokeStyle(3, 0xbaff39)
+            .setInteractive({ useHandCursor: true })
+            .setDepth(1001);
+        overlay.add(soundToggle);
+        const soundIcon = addPhosphorIcon(
+            this,
+            this.sound.mute ? 'speaker-slash' : 'speaker-high',
+            -120,
+            270,
+            26,
+            0xbaff39,
+            1002,
+        );
+        const soundState = addText(15, 270, this.sound.mute ? 'ÁUDIO DESATIVADO' : 'ÁUDIO ATIVADO', '24px', '#baff39')
+            .setInteractive({ useHandCursor: true });
+        overlay.add(soundIcon);
+        const toggleSound = () => {
+            const muted = toggleMute(this);
+            soundState.setText(muted ? 'ÁUDIO DESATIVADO' : 'ÁUDIO ATIVADO');
+            soundIcon.setTexture(`phosphor-${muted ? 'speaker-slash' : 'speaker-high'}`);
+            if (!muted) playSfx(this, 'ui-click');
+        };
+        soundToggle.on('pointerdown', toggleSound);
+        soundState.on('pointerdown', toggleSound);
     }
 
     private openDeck() {
@@ -251,7 +451,7 @@ export class Title extends Phaser.Scene {
             fontSize: '22px',
             color: '#c4b694',
         }).setOrigin(0.5);
-        overlay.add(summary);
+        overlay.add([summary, addPhosphorIcon(this, 'cards-three', -286, 286, 28, 0xc4b694, 1002)]);
     }
 
     private createOverlay(title: string, width: number, height: number) {
@@ -266,15 +466,23 @@ export class Title extends Phaser.Scene {
             fontSize: '38px',
             color: '#f3e5c7',
         }).setOrigin(0.5);
-        const close = this.add.text(width / 2 - 34, -height / 2 + 28, '×', {
-            fontFamily: FONT,
-            fontStyle: '700',
-            fontSize: '48px',
-            color: '#f3e5c7',
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        const close = addPhosphorIcon(this, 'x', width / 2 - 34, -height / 2 + 28, 30, 0xf3e5c7, 1003)
+            .setInteractive({ useHandCursor: true });
+        close.on('pointerover', () => {
+            this.tweens.killTweensOf(close);
+            if (!REDUCED_MOTION) this.tweens.add({ targets: close, scale: 1.15, duration: 120, ease: 'Sine.easeOut' });
+        });
+        close.on('pointerout', () => {
+            this.tweens.killTweensOf(close);
+            if (REDUCED_MOTION) close.setScale(1);
+            else this.tweens.add({ targets: close, scale: 1, duration: 120, ease: 'Sine.easeOut' });
+        });
         overlay.add([heading, close]);
 
-        const closeOverlay = () => overlay.destroy();
+        const closeOverlay = () => {
+            playSfx(this, 'ui-click');
+            overlay.destroy();
+        };
         backdrop.on('pointerdown', closeOverlay);
         close.on('pointerdown', closeOverlay);
         this.input.keyboard?.once('keydown-ESC', closeOverlay);
